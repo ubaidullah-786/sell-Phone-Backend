@@ -1,6 +1,9 @@
+const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const morgan = require('morgan');
 const userRouter = require('./routes/userRoutes');
+const adRouter = require('./routes/adRoutes.js');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const rateLimit = require('express-rate-limit');
@@ -30,7 +33,13 @@ app.use((req, res, next) => {
   next();
 });
 
+const uploadPath = path.join(process.cwd(), 'uploads/ads');
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath, { recursive: true });
+}
+
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/ads', adRouter);
 
 app.use((req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

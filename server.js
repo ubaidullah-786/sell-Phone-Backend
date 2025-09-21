@@ -12,10 +12,6 @@ dotenv.config({ path: './config.env' });
 const app = require('./app');
 
 const localDB = process.env.DATABASE_LOCAL;
-// const db = process.env.DATABASE.replace(
-//   '<db_password>',
-//   process.env.DATABASE_PASSWORD,
-// );
 
 (async () => {
   try {
@@ -25,8 +21,6 @@ const localDB = process.env.DATABASE_LOCAL;
     console.error(`Connection error: ${err}`);
   }
 })();
-
-// mongoose.connect(db).then(console.log('connection succesfull'));
 
 const port = process.env.PORT || 5000;
 const server = app.listen(port, () => {
