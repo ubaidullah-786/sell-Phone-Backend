@@ -195,3 +195,35 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
 
   createSendToken(user, 200, res);
 });
+
+exports.optionalProtect = async (req, res, next) => {
+  try {
+    let token;
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+    if (!token) return next(); // no token, continue as guest
+
+    // verify token
+    let decoded;
+    try {
+      decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+    } catch (err) {
+      // invalid token -> ignore, continue as guest (do not throw)
+      return next();
+    }
+
+    // find user and attach to req.user
+    const currentUser = await User.findById(decoded.id).select('-password');
+    if (!currentUser) return next(); // token user no longer exists
+
+    req.user = currentUser;
+    return next();
+  } catch (err) {
+    // any unexpected error -> continue as guest (to keep endpoint public)
+    return next();
+  }
+};

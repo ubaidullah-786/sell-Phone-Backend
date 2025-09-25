@@ -3,14 +3,24 @@ const Ad = require('../models/adModel');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 
-// POST /api/v1/favorites/:adId  (protected) - save an ad
 exports.addFavorite = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
   const { adId } = req.params;
 
   // ensure ad exists
-  const ad = await Ad.findById(adId);
+  const ad = await Ad.findById(adId).select('user isActive expiresAt');
   if (!ad) return next(new AppError('Ad not found', 404));
+
+  // Owner cannot save their own ad
+  if (ad.user && ad.user.toString() === userId) {
+    return next(new AppError('You cannot save your own ad', 400));
+  }
+
+  // Only allow saving active and not-yet-expired ads
+  const now = new Date();
+  if (!ad.isActive || (ad.expiresAt && new Date(ad.expiresAt) <= now)) {
+    return next(new AppError('Only active ads can be saved', 400));
+  }
 
   // create favorite docs but prevent duplicates via unique index
   try {
