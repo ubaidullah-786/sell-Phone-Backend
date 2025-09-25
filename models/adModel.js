@@ -19,7 +19,7 @@ const adSchema = new mongoose.Schema(
     images: {
       type: [String],
       required: true,
-    }, // store image filenames/URLs
+    },
 
     price: {
       type: Number,
@@ -58,6 +58,15 @@ const adSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    expiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from creation
+    },
 
     // Ownership
     user: {
@@ -68,6 +77,19 @@ const adSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
+
+// Virtual to check if expired
+adSchema.virtual('isExpired').get(function () {
+  return new Date() > this.expiresAt;
+});
+
+// Pre middleware to prevent activation after expiry
+adSchema.pre('save', function (next) {
+  if (this.isExpired && this.isActive) {
+    this.isActive = false;
+  }
+  next();
+});
 
 const Ad = mongoose.model('Ad', adSchema);
 module.exports = Ad;

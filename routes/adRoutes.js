@@ -17,4 +17,10 @@ router
   .patch(authController.protect, upload.array('image'), adController.updateAd)
   .delete(authController.protect, adController.deleteAd);
 
+router.patch(
+  '/:id/toggle-status',
+  authController.protect,
+  adController.toggleAdStatus,
+);
+
 module.exports = router;

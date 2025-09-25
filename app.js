@@ -4,6 +4,7 @@ const express = require('express');
 const morgan = require('morgan');
 const userRouter = require('./routes/userRoutes');
 const adRouter = require('./routes/adRoutes.js');
+const phoneRouter = require('./routes/phoneRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const rateLimit = require('express-rate-limit');
@@ -40,6 +41,7 @@ if (!fs.existsSync(uploadPath)) {
 
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/ads', adRouter);
+app.use('/api/v1/phones', phoneRouter);
 
 app.use((req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

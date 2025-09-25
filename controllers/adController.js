@@ -125,3 +125,29 @@ exports.deleteAd = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
+
+exports.toggleAdStatus = catchAsync(async (req, res, next) => {
+  const ad = await Ad.findById(req.params.id);
+
+  if (!ad) return next(new AppError('No ad found with that ID', 404));
+  if (ad.user.toString() !== req.user.id) {
+    return next(new AppError('You are not allowed to update this ad', 403));
+  }
+
+  // If expired, cannot reactivate
+  if (ad.isExpired) {
+    ad.isActive = false;
+    await ad.save();
+    return next(
+      new AppError('Ad has expired and cannot be activated again', 400),
+    );
+  }
+
+  ad.isActive = !ad.isActive;
+  await ad.save();
+
+  res.status(200).json({
+    status: 'success',
+    data: { ad },
+  });
+});
