@@ -1,14 +1,13 @@
+// routes/favoriteRoutes.js
 const express = require('express');
-const favoriteController = require('../controllers/favoriteController');
+const favCtrl = require('../controllers/favoriteController');
 const authController = require('../controllers/authController');
 const router = express.Router();
 
-router.use(authController.protect); // all favorite routes protected
+router.use(authController.protect);
 
-router.get('/', favoriteController.getUserFavorites);
-router
-  .route('/:adId')
-  .post(favoriteController.addFavorite)
-  .delete(favoriteController.removeFavorite);
+router.post('/:adId', favCtrl.addFavorite);
+router.delete('/:adId', favCtrl.removeFavorite);
+router.get('/', favCtrl.getUserFavorites);
 
 module.exports = router;

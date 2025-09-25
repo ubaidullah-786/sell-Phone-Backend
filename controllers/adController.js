@@ -24,75 +24,28 @@ exports.createAd = catchAsync(async (req, res, next) => {
 });
 
 exports.getAds = catchAsync(async (req, res, next) => {
-  // build filter from query (price, brand, model, city, town)
-  const filter = {};
-  if (req.query.brand) filter.brand = req.query.brand;
-  if (req.query.model) filter.model = req.query.model;
-  if (req.query.city) filter.city = req.query.city;
-  if (req.query.town) filter.town = req.query.town;
-
-  // price range
+  const queryObj = {};
+  // Price filter
   if (req.query.minPrice || req.query.maxPrice) {
-    filter.price = {};
-    if (req.query.minPrice) filter.price.$gte = Number(req.query.minPrice);
-    if (req.query.maxPrice) filter.price.$lte = Number(req.query.maxPrice);
+    queryObj.price = {};
+    if (req.query.minPrice) queryObj.price.$gte = req.query.minPrice;
+    if (req.query.maxPrice) queryObj.price.$lte = req.query.maxPrice;
   }
-
-  // pagination options
-  const limit = Math.min(parseInt(req.query.limit || 20), 100);
-  const page = Math.max(parseInt(req.query.page || 1), 1);
-  const skip = (page - 1) * limit;
-
-  const ads = await Ad.getPublicList(filter, { limit, skip });
-
-  // Lightweight transform: keep only first image as thumbnail
-  const transformed = ads.map(a => ({
-    _id: a._id,
-    title: a.title,
-    price: a.price,
-    brand: a.brand,
-    model: a.model,
-    city: a.city,
-    town: a.town,
-    isFeatured: a.isFeatured,
-    createdAt: a.createdAt,
-    thumbnail: Array.isArray(a.images) && a.images.length ? a.images[0] : null,
-    user: a.user, // may be ObjectId only unless populated
-  }));
+  const ads = await Ad.find(queryObj)
+    .populate('user', 'name email')
+    .sort('-createdAt');
 
   res.status(200).json({
     status: 'success',
-    results: transformed.length,
-    data: transformed,
+    results: ads.length,
+    data: ads,
   });
 });
 
 exports.getAd = catchAsync(async (req, res, next) => {
-  const adId = req.params.id;
-  if (!mongoose.Types.ObjectId.isValid(adId))
-    return next(new AppError('Invalid ad id', 400));
+  const ad = await Ad.findById(req.params.id).populate('user', 'name email');
 
-  // requester id if token present
-  const requesterId = req.user ? req.user.id : null;
-
-  const result = await Ad.getByIdForUser(adId, requesterId);
-
-  if (!result) return next(new AppError('Ad not found', 404));
-  if (result.notAccessible) return next(new AppError('Ad not available', 404));
-
-  let { ad } = result;
-
-  // If owner and savesCount null (model didn't compute), compute now
-  if (
-    requesterId &&
-    ad.user &&
-    ad.user._id.toString() === requesterId.toString()
-  ) {
-    if (ad.savesCount === null || ad.savesCount === undefined) {
-      const count = await Favorite.countDocuments({ ad: ad._id });
-      ad.savesCount = count;
-    }
-  }
+  if (!ad) return next(new AppError('No ad found with that ID', 404));
 
   res.status(200).json({
     status: 'success',
@@ -102,48 +55,33 @@ exports.getAd = catchAsync(async (req, res, next) => {
 
 exports.getMyAds = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
-  const ads = await Ad.getMyAdsWithSaves(userId);
 
-  // Optionally map thumbnail
-  const mapped = ads.map(a => ({
-    ...a,
-    thumbnail: Array.isArray(a.images) && a.images.length ? a.images[0] : null,
-  }));
+  // return all ads created by this user (including active/inactive/expired)
+  const ads = await Ad.find({ user: userId }).sort('-createdAt');
 
   res.status(200).json({
     status: 'success',
-    results: mapped.length,
-    data: mapped,
+    results: ads.length,
+    data: ads,
   });
 });
 
 exports.getAdsByUser = catchAsync(async (req, res, next) => {
   const { userId } = req.params;
-  if (!mongoose.Types.ObjectId.isValid(userId))
-    return next(new AppError('Invalid user id', 400));
 
-  const filter = { user: mongoose.Types.ObjectId(userId) };
-  const ads = await Ad.getPublicList(filter, {
-    limit: parseInt(req.query.limit || 50),
-  });
-
-  const transformed = ads.map(a => ({
-    _id: a._id,
-    title: a.title,
-    price: a.price,
-    brand: a.brand,
-    model: a.model,
-    city: a.city,
-    town: a.town,
-    isFeatured: a.isFeatured,
-    createdAt: a.createdAt,
-    thumbnail: Array.isArray(a.images) && a.images.length ? a.images[0] : null,
-  }));
+  // public view: only show ads that are isActive === true and not expired
+  // we check expiresAt > now AND isActive true
+  const now = new Date();
+  const ads = await Ad.find({
+    user: userId,
+    isActive: true,
+    expiresAt: { $gt: now },
+  }).sort('-createdAt');
 
   res.status(200).json({
     status: 'success',
-    results: transformed.length,
-    data: transformed,
+    results: ads.length,
+    data: ads,
   });
 });
 
