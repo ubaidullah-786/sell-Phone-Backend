@@ -11,6 +11,10 @@ router.route('/').get(adController.getAds).post(
   adController.createAd,
 );
 
+router.get('/my-ads', authController.protect, adController.getMyAds);
+
+router.get('/user/:userId', adController.getAdsByUser);
+
 router
   .route('/:id')
   .get(adController.getAd)
