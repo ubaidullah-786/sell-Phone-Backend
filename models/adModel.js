@@ -65,7 +65,7 @@ const adSchema = new mongoose.Schema(
 
     expiresAt: {
       type: Date,
-      default: () => new Date(Date.now() + 60 * 1000), // 30 days from creation
+      default: () => new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
     },
 
     // Ownership
@@ -92,7 +92,7 @@ adSchema.pre('save', function (next) {
 });
 
 adSchema.methods.ensureActiveStatus = async function () {
-  if (this.expiresAt && new Date() > this.expiresAt && this.isActive) {
+  if (this.isActive && this.expiresAt && new Date() > this.expiresAt) {
     this.isActive = false;
     await this.save();
   }

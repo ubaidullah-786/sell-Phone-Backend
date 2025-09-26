@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const seedData = require('./utils/seedData');
 
 // process.on('uncaughtException', err => {
 //   console.log('UNCAUGHT EXCEPTION!💥 Shutting down...');
@@ -20,6 +21,7 @@ const localDB = process.env.DATABASE_LOCAL;
   } catch (err) {
     console.error(`Connection error: ${err}`);
   }
+  await seedData.seedData();
 })();
 
 const port = process.env.PORT || 5000;
