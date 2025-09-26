@@ -135,7 +135,7 @@ exports.getMyAds = catchAsync(async (req, res, next) => {
 
   const ads = await Ad.aggregate([
     {
-      $match: { user: new mongoose.Types.ObjectId(userId) },
+      $match: { user: mongoose.Types.ObjectId.createFromHexString(userId) },
     },
     {
       $lookup: {
@@ -150,11 +150,11 @@ exports.getMyAds = catchAsync(async (req, res, next) => {
         savesCount: { $size: '$favorites' },
       },
     },
-    {
-      $project: {
-        favorites: 0, // exclude raw favorites array
-      },
-    },
+    // {
+    //   $project: {
+    //     favorites: 0, // exclude raw favorites array
+    //   },
+    // },
     { $sort: { createdAt: -1 } },
   ]);
 
