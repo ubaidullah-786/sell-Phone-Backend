@@ -102,6 +102,7 @@ exports.getAd = catchAsync(async (req, res, next) => {
 
   if (!ad) return next(new AppError('No ad found with that ID', 404));
 
+  await ad.ensureActiveStatus();
   const now = new Date();
   const expired = ad.expiresAt && new Date(ad.expiresAt) <= now;
   const activeAndNotExpired = ad.isActive && !expired;
@@ -132,13 +133,52 @@ exports.getAd = catchAsync(async (req, res, next) => {
 exports.getMyAds = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
 
-  // return all ads created by this user (including active/inactive/expired)
-  const ads = await Ad.find({ user: userId }).sort('-createdAt');
+  const ads = await Ad.aggregate([
+    {
+      $match: { user: new mongoose.Types.ObjectId(userId) },
+    },
+    {
+      $lookup: {
+        from: 'favorites', // collection name for favorites
+        localField: '_id', // Ad._id
+        foreignField: 'ad', // Favorite.ad
+        as: 'favorites',
+      },
+    },
+    {
+      $addFields: {
+        savesCount: { $size: '$favorites' },
+      },
+    },
+    {
+      $project: {
+        favorites: 0, // exclude raw favorites array
+      },
+    },
+    { $sort: { createdAt: -1 } },
+  ]);
+
+  const transformed = ads.map(a => ({
+    _id: a._id,
+    title: a.title,
+    price: a.price,
+    brand: a.brand,
+    model: a.model,
+    city: a.city,
+    town: a.town,
+    isFeatured: !!a.isFeatured,
+    isActive: a.isActive,
+    expiresAt: a.expiresAt,
+    createdAt: a.createdAt,
+    thumbnail: Array.isArray(a.images) && a.images.length ? a.images[0] : null,
+    user: a.user ? { _id: a.user._id, name: a.user.name } : null,
+    savesCount: a.savesCount,
+  }));
 
   res.status(200).json({
     status: 'success',
     results: ads.length,
-    data: ads,
+    data: transformed,
   });
 });
 
