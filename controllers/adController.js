@@ -26,20 +26,28 @@ exports.createAd = catchAsync(async (req, res, next) => {
 });
 
 exports.getAds = catchAsync(async (req, res, next) => {
-  // base: only active and not expired
   const now = new Date();
   const queryObj = {
     isActive: true,
     expiresAt: { $gt: now },
   };
 
-  // optional filters
+  if (req.query.search) {
+    const keywords = req.query.search.trim().split(/\s+/);
+    queryObj.$and = keywords.map(word => ({
+      $or: [
+        { brand: { $regex: word, $options: 'i' } },
+        { model: { $regex: word, $options: 'i' } },
+        { title: { $regex: word, $options: 'i' } },
+      ],
+    }));
+  }
+
   if (req.query.brand) queryObj.brand = req.query.brand;
   if (req.query.model) queryObj.model = req.query.model;
   if (req.query.city) queryObj.city = req.query.city;
   if (req.query.town) queryObj.town = req.query.town;
 
-  // price filter (safely parse numbers)
   const min = req.query.minPrice ? Number(req.query.minPrice) : null;
   const max = req.query.maxPrice ? Number(req.query.maxPrice) : null;
   if (
@@ -51,23 +59,20 @@ exports.getAds = catchAsync(async (req, res, next) => {
     if (max !== null && !Number.isNaN(max)) queryObj.price.$lte = max;
   }
 
-  // pagination (defaults)
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
   const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
   const skip = (page - 1) * limit;
 
-  // select only fields needed for ad cards
   const ads = await Ad.find(queryObj)
     .select(
       'title price brand model city town images isFeatured createdAt user',
     )
-    .populate('user', 'name') // only bring name (no email) to keep payload small
+    .populate('user', 'name')
     .sort({ isFeatured: -1, createdAt: -1 })
     .skip(skip)
     .limit(limit)
     .lean();
 
-  // transform to thin DTO for frontend ad cards
   const transformed = ads.map(a => ({
     _id: a._id,
     title: a.title,

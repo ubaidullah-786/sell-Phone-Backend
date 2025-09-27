@@ -1,4 +1,3 @@
-// socketServer.js
 const socketIo = require('socket.io');
 const Message = require('./models/messageModel');
 const Chat = require('./models/chatModel');

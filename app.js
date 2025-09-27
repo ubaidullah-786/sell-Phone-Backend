@@ -37,10 +37,12 @@ app.use((req, res, next) => {
   next();
 });
 
-const uploadPath = path.join(process.cwd(), 'uploads/ads');
+const uploadPath = path.join(process.cwd(), 'public/uploads/ads');
 if (!fs.existsSync(uploadPath)) {
   fs.mkdirSync(uploadPath, { recursive: true });
 }
+
+app.use(express.static('public'));
 
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/ads', adRouter);
