@@ -103,7 +103,7 @@ function initSocket(server) {
       // We must find which user had this socketId
       // Approach: iterate presence map (acceptable for single server). For large scale use reverse map or Redis.
       // We'll remove any entry that matched socket.id
-      const { onlineUsers } = require('./lib/presence');
+      const { onlineUsers } = require('./utils/presence');
       for (const [userId, set] of onlineUsers.entries()) {
         if (set.has(socket.id)) {
           removeSocketForUser(userId, socket.id);

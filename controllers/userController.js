@@ -10,22 +10,12 @@ const filterObj = (obj, ...allowedFields) => {
   return newObj;
 };
 
-// exports.getAllUsers = catchAsync(async (req, res) => {
-//   const users = await User.find();
-//   if (users)
-//     res.status(200).json({
-//       status: 'success',
-//       length: users.length,
-//       data: { users },
-//     });
-// });
-
 exports.updateMe = catchAsync(async (req, res, next) => {
   if (!req?.body) return next(new AppError('Please provide body', 400));
   if (req.body?.password || req.body?.passwordConfirm)
     return next(
       new AppError(
-        'This route is not for password updates. Please use /updateMyPassword',
+        'This route is not for password updates. Please use /update-my-password',
         400,
       ),
     );

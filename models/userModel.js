@@ -24,13 +24,11 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Please provide a password'],
-    min: 8,
+    minlength: 8,
     select: false,
   },
   passwordConfirm: {
     type: String,
-    required: [true, 'Please confirm your password'],
-    min: 8,
     validate: {
       validator: function (el) {
         return el === this.password;
@@ -48,8 +46,10 @@ const userSchema = new mongoose.Schema({
   },
 });
 
+// Updated password hashing middleware
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  // Skip hashing if password is not modified OR if we're transferring from temp user
+  if (!this.isModified('password') || this._skipPasswordHash) return next();
 
   this.password = await bcrypt.hash(this.password, 12);
   this.passwordConfirm = undefined;
@@ -58,7 +58,6 @@ userSchema.pre('save', async function (next) {
 
 userSchema.pre('save', function (next) {
   if (!this.isModified('password') || this.isNew) return next();
-
   this.passwordChangedAt = Date.now() - 1000;
   next();
 });
@@ -89,11 +88,9 @@ userSchema.methods.createPasswordResetToken = function () {
     .createHash('sha256')
     .update(resetToken)
     .digest('hex');
-
-  this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
   return resetToken;
 };
 
 const User = mongoose.model('User', userSchema);
-
 module.exports = User;
