@@ -65,7 +65,7 @@ const adSchema = new mongoose.Schema(
 
     expiresAt: {
       type: Date,
-      default: () => new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+      default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
 
     // Ownership

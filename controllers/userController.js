@@ -71,10 +71,16 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 
   // Handle other profile updates (name, photo, etc.) - these update immediately
   const filteredBody = filterObj(req.body, 'name', 'photo');
+
+  if (req.file) {
+    filteredBody.photo = `/uploads/users/${req.file.filename}`;
+  }
+
   if (Object.keys(filteredBody).length > 0) {
     Object.keys(filteredBody).forEach(key => {
       user[key] = filteredBody[key];
     });
+
     await user.save({ validateBeforeSave: false });
   }
 
@@ -109,7 +115,6 @@ exports.updateMe = catchAsync(async (req, res, next) => {
             name: updatedUser.name,
             email: updatedUser.email,
             photo: updatedUser.photo,
-            role: updatedUser.role,
             pendingEmail: updatedUser.pendingEmail,
           },
         },
@@ -141,7 +146,6 @@ exports.updateMe = catchAsync(async (req, res, next) => {
           name: updatedUser.name,
           email: updatedUser.email,
           photo: updatedUser.photo,
-          role: updatedUser.role,
         },
       },
     });
@@ -199,24 +203,6 @@ exports.cancelEmailChange = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     message: `Email change to ${pendingEmail} has been cancelled`,
-  });
-});
-
-exports.getMe = catchAsync(async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        photo: user.photo,
-        role: user.role,
-        pendingEmail: user.pendingEmail, // Show if there's a pending email change
-      },
-    },
   });
 });
 

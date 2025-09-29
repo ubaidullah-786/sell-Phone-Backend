@@ -1,11 +1,19 @@
 const multer = require('multer');
 const path = require('path');
 
-// Storage setup → save in "uploads/" folder
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'public/uploads/ads'); // store inside /uploads/ads
+    let folder; // fallback
+
+    if (file.fieldname === 'image') {
+      folder = 'public/uploads/ads';
+    } else if (file.fieldname === 'photo') {
+      folder = 'public/uploads/users';
+    }
+
+    cb(null, folder);
   },
+
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(

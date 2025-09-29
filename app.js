@@ -37,9 +37,14 @@ app.use((req, res, next) => {
   next();
 });
 
-const uploadPath = path.join(process.cwd(), 'public/uploads/ads');
-if (!fs.existsSync(uploadPath)) {
-  fs.mkdirSync(uploadPath, { recursive: true });
+const imagePath = path.join(process.cwd(), 'public/uploads/ads');
+if (!fs.existsSync(imagePath)) {
+  fs.mkdirSync(imagePath, { recursive: true });
+}
+
+const photoPath = path.join(process.cwd(), 'public/uploads/users');
+if (!fs.existsSync(photoPath)) {
+  fs.mkdirSync(photoPath, { recursive: true });
 }
 
 app.use(express.static('public'));

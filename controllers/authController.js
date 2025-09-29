@@ -31,17 +31,19 @@ const createSendToken = (user, statusCode, res, message = null) => {
 
   // Remove password from output
   user.password = undefined;
+  const userData = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  };
+
+  if (user.photo) userData.photo = user.photo;
 
   const response = {
     status: 'success',
     token,
     data: {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      userData,
     },
   };
 
@@ -66,13 +68,20 @@ exports.signup = catchAsync(async (req, res, next) => {
     await TempUser.deleteOne({ email });
   }
 
-  // Create temporary user
-  tempUser = await TempUser.create({
+  const userData = {
     name,
     email,
     password,
     passwordConfirm,
-  });
+  };
+
+  // Only add photo if user uploaded one
+  if (req.file) {
+    userData.photo = `/uploads/users/${req.file.filename}`;
+  }
+
+  // Create temporary user
+  tempUser = await TempUser.create(userData);
 
   // Generate verification token
   const verifyToken = tempUser.createEmailVerificationToken();
@@ -126,6 +135,7 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
   const newUser = new User({
     name: tempUser.name,
     email: tempUser.email,
+    photo: tempUser.photo,
   });
 
   // Manually set the already-hashed password (bypass validation and hashing)
