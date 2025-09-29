@@ -3,6 +3,8 @@ const Ad = require('../models/adModel.js');
 const catchAsync = require('../utils/catchAsync.js');
 const AppError = require('../utils/appError.js');
 const Favorite = require('../models/favoriteModel');
+const path = require('path');
+const fs = require('fs');
 
 exports.createAd = catchAsync(async (req, res, next) => {
   if (!req.files || req.files.length === 0)
@@ -243,6 +245,26 @@ exports.updateAd = catchAsync(async (req, res, next) => {
   if (req.files && req.files.length > 0) {
     if (req.files.length > 5) {
       return next(new AppError('You can upload a maximum of 5 images', 400));
+    }
+
+    // Delete old images from disk
+    if (ad.images && ad.images.length > 0) {
+      ad.images.forEach(img => {
+        const oldPath = path.join(
+          __dirname,
+          '..',
+          'public',
+          'uploads',
+          'ads',
+          img,
+        );
+        if (fs.existsSync(oldPath)) {
+          fs.unlink(oldPath, err => {
+            if (err)
+              console.error(`Failed to delete old ad image: ${img}`, err);
+          });
+        }
+      });
     }
 
     ad.images = req.files.map(file => file.filename);

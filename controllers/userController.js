@@ -5,6 +5,8 @@ const catchAsync = require('./../utils/catchAsync');
 const { sendEmail, getEmailChangeHTML } = require('./../utils/email');
 const crypto = require('crypto');
 const validator = require('validator');
+const path = require('path');
+const fs = require('fs');
 
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -70,9 +72,17 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   }
 
   // Handle other profile updates (name, photo, etc.) - these update immediately
-  const filteredBody = filterObj(req.body, 'name', 'photo');
+  const filteredBody = filterObj(req.body, 'name');
 
   if (req.file) {
+    if (user.photo) {
+      const oldPhotoPath = path.join(__dirname, '..', 'public', user.photo);
+
+      if (fs.existsSync(oldPhotoPath)) {
+        fs.unlinkSync(oldPhotoPath);
+      }
+    }
+
     filteredBody.photo = `/uploads/users/${req.file.filename}`;
   }
 
