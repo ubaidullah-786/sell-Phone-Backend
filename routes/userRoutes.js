@@ -11,11 +11,16 @@ router.post('/login', authController.login);
 router.post('/forgot-password', authController.forgotPassword);
 router.patch('/reset-password/:token', authController.resetPassword);
 
+// Email change verification (public route)
+router.get('/verify-email-change/:token', userController.verifyEmailChange);
+
 // Protected routes
 router.use(authController.protect); // All routes after this middleware are protected
 
+router.get('/me', userController.getMe);
 router.patch('/update-my-password', authController.updatePassword);
 router.patch('/update-me', userController.updateMe);
+router.patch('/cancel-email-change', userController.cancelEmailChange);
 router.delete('/delete-me', userController.deleteMe);
 
 module.exports = router;

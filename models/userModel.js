@@ -2,6 +2,10 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+const Ad = require('./adModel');
+const Chat = require('./chatModel');
+const Favorite = require('./favoriteModel');
+const Message = require('./messageModel');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -39,11 +43,10 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,
-  active: {
-    type: Boolean,
-    default: true,
-    select: false,
-  },
+
+  pendingEmail: String, // New email waiting for verification
+  emailChangeToken: String,
+  emailChangeExpires: Date,
 });
 
 // Updated password hashing middleware
@@ -62,8 +65,18 @@ userSchema.pre('save', function (next) {
   next();
 });
 
-userSchema.pre(/^find/, function (next) {
-  this.find({ active: { $ne: false } });
+userSchema.pre('findOneAndDelete', async function (next) {
+  const userId = this.getQuery()['_id'];
+
+  // Delete related data
+  await Promise.all([
+    Ad.deleteMany({ user: userId }),
+    Chat.deleteMany({ user: userId }),
+    Favorite.deleteMany({ user: userId }),
+    Message.deleteMany({ user: userId }),
+    Message.deleteMany({ user: userId }),
+  ]);
+
   next();
 });
 
@@ -90,6 +103,16 @@ userSchema.methods.createPasswordResetToken = function () {
     .digest('hex');
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
   return resetToken;
+};
+
+userSchema.methods.createEmailChangeToken = function () {
+  const changeToken = crypto.randomBytes(32).toString('hex');
+  this.emailChangeToken = crypto
+    .createHash('sha256')
+    .update(changeToken)
+    .digest('hex');
+  this.emailChangeExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+  return changeToken;
 };
 
 const User = mongoose.model('User', userSchema);
