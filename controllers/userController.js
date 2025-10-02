@@ -102,7 +102,7 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 
     try {
       // Send verification email to NEW email address
-      const verifyURL = `http://localhost:3000/api/v1/users/verify-email-change/${changeToken}`;
+      const verifyURL = `http://localhost:3001/verify-email-change/${changeToken}`;
       const htmlContent = getEmailChangeHTML(user.name, newEmail, verifyURL);
       const textContent = `Hi ${user.name.split(' ')[0]}! Verify your new email address: ${verifyURL}`;
 

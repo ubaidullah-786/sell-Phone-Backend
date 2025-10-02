@@ -13,8 +13,18 @@ const globalErrorHandler = require('./controllers/errorController');
 const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
+const cors = require('cors');
 
 const app = express();
+
+app.use(
+  cors({
+    origin: ['http://localhost:3001', 'http://127.0.0.1:3001'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
 
 app.use(helmet());
 

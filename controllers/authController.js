@@ -89,7 +89,7 @@ exports.signup = catchAsync(async (req, res, next) => {
 
   try {
     // Send verification email
-    const verifyURL = `http://localhost:3000/api/v1/users/verify-email/${verifyToken}`;
+    const verifyURL = `http://localhost:3001/verify-email/${verifyToken}`;
     const htmlContent = getEmailVerificationHTML(name, verifyURL);
     const textContent = `Hi ${name.split(' ')[0]}! Please verify your email by visiting: ${verifyURL}`;
 
@@ -157,6 +157,7 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
 
 // Step 3: User login
 exports.login = catchAsync(async (req, res, next) => {
+  console.log(req.body);
   const { email, password } = req.body;
   if (!email || !password)
     return next(new AppError('Please provide email and password', 400));
@@ -183,7 +184,7 @@ exports.forgotPassword = catchAsync(async (req, res, next) => {
 
   try {
     // 3) Send it to user's email
-    const resetURL = `http://localhost:3000/api/v1/users/reset-password/${resetToken}`;
+    const resetURL = `http://localhost:3001/reset-password/${resetToken}`;
     const htmlContent = getPasswordResetHTML(user.name, resetURL);
     const textContent = `Forgot your password? Reset it here: ${resetURL}. If you didn't request this, please ignore this email.`;
 
