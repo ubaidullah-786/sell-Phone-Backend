@@ -1,6 +1,6 @@
 [
   {
-    "city": "lahore",
+    "city": "Lahore",
     "groups": {
       "A": [
         "Aabpara Coop Housing Society",
@@ -452,7 +452,7 @@
   },
 
   {
-    "city": "islamabad",
+    "city": "Islamabad",
     "groups": {
       "A": [
         "AGHOSH",
@@ -649,7 +649,7 @@
   },
 
   {
-    "city": "karachi",
+    "city": "Karachi",
     "groups": {
       "A": [
         "Ablagh-e-Aama Society",
@@ -829,7 +829,7 @@
   },
 
   {
-    "city": "rawalpindi",
+    "city": "Rawalpindi",
     "groups": {
       "A": [
         "Adiala Road",
@@ -1017,7 +1017,7 @@
   },
 
   {
-    "city": "abbottabad",
+    "city": "Abbottabad",
     "groups": {
       "A": ["Abbottabad Road", "Ayub Medical Complex"],
       "B": ["Banda Ali Khan Road", "Beerh Road", "Bilal Town", "Bilqias Town"],
@@ -1067,7 +1067,7 @@
   },
 
   {
-    "city": "bahawalpur",
+    "city": "Bahawalpur",
     "groups": {
       "A": ["Al-Raheem Town"],
       "C": ["Canal Garden Housing Scheme", "Canal Road", "Cheema Town"],
@@ -1089,7 +1089,7 @@
   },
 
   {
-    "city": "faisalabad",
+    "city": "Faisalabad",
     "groups": {
       "C": [
         "Canal Expressway",
@@ -1209,7 +1209,7 @@
   },
 
   {
-    "city": "gujranwala",
+    "city": "Gujranwala",
     "groups": {
       "A": ["Allama Iqbal Town", "Aziza Housing Scheme"],
       "B": ["Baghbanpura", "Bilal Gardens", "Bismillah Colony"],
@@ -1249,7 +1249,7 @@
   },
 
   {
-    "city": "gujrat",
+    "city": "Gujrat",
     "groups": {
       "A": ["Al Nabi Colony", "Ali Pura Road"],
       "B": ["Bhimber Road"],
@@ -1265,7 +1265,7 @@
   },
 
   {
-    "city": "hyderabad",
+    "city": "Hyderabad",
     "groups": {
       "A": [
         "Abdullah Garden",
@@ -1319,7 +1319,7 @@
   },
 
   {
-    "city": "jhelum",
+    "city": "Jhelum",
     "groups": {
       "C": ["Cantt", "Citi Housing Scheme", "Civil Line"],
       "G": ["GT Road"],
@@ -1330,7 +1330,7 @@
   },
 
   {
-    "city": "kasur",
+    "city": "Kasur",
     "groups": {
       "F": ["Ferozpur Road"],
       "L": ["Lalyani"],
@@ -1340,7 +1340,7 @@
   },
 
   {
-    "city": "multan",
+    "city": "Multan",
     "groups": {
       "A": [
         "Abdali Road",
@@ -1446,7 +1446,7 @@
   },
 
   {
-    "city": "murree",
+    "city": "Murree",
     "groups": {
       "A": ["Abbottabad Road", "Angoori Road", "Ayubia Road"],
       "B": ["Bansra Gali", "Barrian", "Bhurban"],
@@ -1478,7 +1478,7 @@
   },
 
   {
-    "city": "okara",
+    "city": "Okara",
     "groups": {
       "OTHER": ["2/4-L Road"],
       "G": ["Green City", "Gulberg City"],
@@ -1488,7 +1488,7 @@
   },
 
   {
-    "city": "peshawar",
+    "city": "Peshawar",
     "groups": {
       "A": [
         "Academy Town",
@@ -1545,7 +1545,7 @@
   },
 
   {
-    "city": "quetta",
+    "city": "Quetta",
     "groups": {
       "S": ["Sirki Road"],
       "J": ["Jinnah Town"],
@@ -1557,7 +1557,7 @@
   },
 
   {
-    "city": "sahiwal",
+    "city": "Sahiwal",
     "groups": {
       "A": [
         "Al Razzaq Executive",
@@ -1578,7 +1578,7 @@
   },
 
   {
-    "city": "sargodha",
+    "city": "Sargodha",
     "groups": {
       "A": ["Asad Park"],
       "C": ["Club Road"],
@@ -1605,7 +1605,7 @@
   },
 
   {
-    "city": "sialkot",
+    "city": "Sialkot",
     "groups": {
       "A": ["Abbot Road", "Askari 2"],
       "C": [

@@ -224,3 +224,25 @@ exports.deleteMe = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
+
+exports.getMe = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+
+  const userData = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  };
+
+  if (user.photo) userData.photo = user.photo;
+  if (user.pendingEmail) userData.pendingEmail = user.pendingEmail;
+  if (user.passwordChangedAt)
+    userData.passwordChangedAt = user.passwordChangedAt;
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      userData,
+    },
+  });
+});

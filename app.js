@@ -31,12 +31,12 @@ app.use(helmet());
 if (process.env.NODE_ENV === 'development') app.use(morgan('dev'));
 
 const limiter = rateLimit({
-  max: 100,
+  max: 130,
   windowMs: 60 * 60 * 1000,
   message: 'Too many requests from that ip. Please try again later',
 });
 
-app.use('/api', limiter);
+// app.use('/api', limiter);
 
 app.use(express.json({ limit: '10kb' }));
 

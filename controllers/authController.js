@@ -26,7 +26,7 @@ const createSendToken = (user, statusCode, res, message = null) => {
     httpOnly: true,
   };
 
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
+  cookieOptions.secure = process.env.NODE_ENV === 'production';
   res.cookie('jwt', token, cookieOptions);
 
   // Remove password from output
@@ -157,7 +157,6 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
 
 // Step 3: User login
 exports.login = catchAsync(async (req, res, next) => {
-  console.log(req.body);
   const { email, password } = req.body;
   if (!email || !password)
     return next(new AppError('Please provide email and password', 400));
@@ -169,6 +168,21 @@ exports.login = catchAsync(async (req, res, next) => {
 
   createSendToken(user, 200, res);
 });
+
+exports.logout = (req, res) => {
+  res.cookie('jwt', 'loggedout', {
+    expires: new Date(Date.now() + 1000),
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/',
+  });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Logged out successfully',
+  });
+};
 
 // Step 4: Forgot password
 exports.forgotPassword = catchAsync(async (req, res, next) => {

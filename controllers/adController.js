@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Ad = require('../models/adModel.js');
+const User = require('../models/userModel.js');
 const catchAsync = require('../utils/catchAsync.js');
 const AppError = require('../utils/appError.js');
 const Favorite = require('../models/favoriteModel');
@@ -10,8 +11,8 @@ exports.createAd = catchAsync(async (req, res, next) => {
   if (!req.files || req.files.length === 0)
     return next(new AppError('Please upload at least one image', 400));
 
-  if (req.files.length > 5)
-    return next(new AppError('You can upload a maximum of 5 images', 400));
+  if (req.files.length > 10)
+    return next(new AppError('You can upload a maximum of 10 images', 400));
 
   const images = req.files.map(file => file.filename);
 
@@ -67,7 +68,7 @@ exports.getAds = catchAsync(async (req, res, next) => {
 
   const ads = await Ad.find(queryObj)
     .select(
-      'title price brand model city town images isFeatured createdAt user',
+      'title price condition model city town images isFeatured createdAt user',
     )
     .populate('user', 'name')
     .sort({ isFeatured: -1, createdAt: -1 })
@@ -79,10 +80,10 @@ exports.getAds = catchAsync(async (req, res, next) => {
     _id: a._id,
     title: a.title,
     price: a.price,
-    brand: a.brand,
     model: a.model,
     city: a.city,
     town: a.town,
+    condition: a.condition,
     isFeatured: !!a.isFeatured,
     createdAt: a.createdAt,
     thumbnail: Array.isArray(a.images) && a.images.length ? a.images[0] : null,
@@ -104,7 +105,7 @@ exports.getAd = catchAsync(async (req, res, next) => {
     return next(new AppError('Invalid ad id', 400));
   }
 
-  // fetch full ad with owner info
+  // fetch full ad with owner info (we populate name and email)
   const ad = await Ad.findById(adId).populate('user', 'name email');
 
   if (!ad) return next(new AppError('No ad found with that ID', 404));
@@ -129,6 +130,23 @@ exports.getAd = catchAsync(async (req, res, next) => {
   if (req.user && ad.user && ad.user._id.toString() === req.user.id) {
     const savesCount = await Favorite.countDocuments({ ad: ad._id });
     payload.savesCount = savesCount;
+  }
+
+  // --- NEW: attach owner's photo if present (look up by email) ---
+  // Only attempt lookup if we have an email from populated user
+  if (ad.user && ad.user.email) {
+    // select common possible photo fields so this works with varied user schemas
+    const ownerDoc = await User.findOne({ email: ad.user.email })
+      .select('photo')
+      .lean();
+
+    if (ownerDoc) {
+      const ownerPhoto = ownerDoc.photo;
+
+      if (ownerPhoto) {
+        payload.ownerPhoto = ownerPhoto;
+      }
+    }
   }
 
   res.status(200).json({
@@ -243,8 +261,8 @@ exports.updateAd = catchAsync(async (req, res, next) => {
 
   // ---- Replace images every time ----
   if (req.files && req.files.length > 0) {
-    if (req.files.length > 5) {
-      return next(new AppError('You can upload a maximum of 5 images', 400));
+    if (req.files.length > 10) {
+      return next(new AppError('You can upload a maximum of 10 images', 400));
     }
 
     // Delete old images from disk
