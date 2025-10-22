@@ -17,7 +17,7 @@ try {
 
 exports.startChat = catchAsync(async (req, res, next) => {
   if (!req?.body) return next(new AppError('Please provide body', 400));
-  const { recipientId } = req.body;
+  const { recipientId, adId } = req.body; // Add adId
   const userId = req.user.id;
 
   if (!recipientId) return next(new AppError('recipientId required', 400));
@@ -26,12 +26,30 @@ exports.startChat = catchAsync(async (req, res, next) => {
   if (recipientId === userId)
     return next(new AppError('Cannot start chat with yourself', 400));
 
-  // find existing chat
-  let chat = await Chat.findOne({
-    participants: { $all: [userId, recipientId] },
-  });
+  // Validate adId if provided
+  if (adId && !mongoose.Types.ObjectId.isValid(adId)) {
+    return next(new AppError('Invalid adId', 400));
+  }
+
+  // Find existing chat for this ad and participants
+  let chat;
+  if (adId) {
+    chat = await Chat.findOne({
+      participants: { $all: [userId, recipientId] },
+      ad: adId,
+    });
+  } else {
+    // Backward compatibility: find chat without ad
+    chat = await Chat.findOne({
+      participants: { $all: [userId, recipientId] },
+    });
+  }
+
   if (!chat) {
-    chat = await Chat.create({ participants: [userId, recipientId] });
+    chat = await Chat.create({
+      participants: [userId, recipientId],
+      ad: adId || null,
+    });
   }
 
   res.status(201).json({ status: 'success', data: chat });
@@ -71,12 +89,37 @@ exports.getMyChats = catchAsync(async (req, res, next) => {
         let: { otherId: '$otherParticipantId' },
         pipeline: [
           { $match: { $expr: { $eq: ['$_id', '$$otherId'] } } },
-          { $project: { name: 1, _id: 1 } },
+          { $project: { name: 1, photo: 1, _id: 1 } },
         ],
         as: 'otherUser',
       },
     },
     { $addFields: { otherUser: { $arrayElemAt: ['$otherUser', 0] } } },
+
+    // *** AD INFO - NEW SECTION ***
+    {
+      $lookup: {
+        from: 'ads',
+        let: { adId: '$ad' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$_id', '$$adId'] } } },
+          {
+            $project: {
+              title: 1,
+              images: 1,
+              _id: 1,
+            },
+          },
+        ],
+        as: 'adInfo',
+      },
+    },
+    {
+      $addFields: {
+        adInfo: { $arrayElemAt: ['$adInfo', 0] },
+      },
+    },
+    // *** END AD INFO ***
 
     // last message
     {
@@ -150,19 +193,38 @@ exports.getMyChats = catchAsync(async (req, res, next) => {
 
   const chats = await Chat.aggregate(pipeline).allowDiskUse(true).exec();
 
-  // Attach online boolean using presence map
+  // Attach online boolean using presence map AND transform ad info
   const transformed = chats.map(c => {
     const otherUser = c.otherUser || null;
     const otherId =
       otherUser && otherUser._id ? otherUser._id.toString() : null;
     const online = otherId ? isUserOnline(otherId) : false;
 
+    // *** TRANSFORM AD INFO - NEW ***
+    const adInfo = c.adInfo
+      ? {
+          _id: c.adInfo._id,
+          title: c.adInfo.title,
+          thumbnail:
+            Array.isArray(c.adInfo.images) && c.adInfo.images.length
+              ? c.adInfo.images[0]
+              : null,
+        }
+      : null;
+    // *** END TRANSFORM ***
+
     return {
       chatId: c._id,
       updatedAt: c.updatedAt,
       otherParticipant: otherUser
-        ? { _id: otherUser._id, name: otherUser.name, online }
+        ? {
+            _id: otherUser._id,
+            name: otherUser.name,
+            photo: otherUser.photo,
+            online,
+          }
         : null,
+      ad: adInfo, // *** ADD THIS FIELD ***
       lastMessage: c.lastMessage || null,
       unreadCount: c.unreadCount || 0,
     };
@@ -186,8 +248,8 @@ exports.getMessages = catchAsync(async (req, res, next) => {
     return next(new AppError('Invalid chatId', 400));
 
   const messages = await Message.find({ chat: chatId })
-    .populate('sender', 'name')
-    .populate('recipient', 'name')
+    .populate('sender', 'name photo')
+    .populate('recipient', 'name photo')
     .sort('createdAt')
     .skip(skip)
     .limit(limit)
@@ -272,7 +334,7 @@ exports.sendMessage = catchAsync(async (req, res, next) => {
     await message.save();
 
     // notify recipient sockets
-    const { getSocketIds } = require('../lib/presence');
+    const { getSocketIds } = require('../utils/presence');
     const socketIds = getSocketIds(recipientId);
     try {
       const io = require('../socketServer').getIo();

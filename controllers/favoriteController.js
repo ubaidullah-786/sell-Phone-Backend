@@ -52,14 +52,14 @@ exports.removeFavorite = catchAsync(async (req, res, next) => {
 exports.getUserFavorites = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
 
-  // populate ad details (update fields as you like)
   const favs = await Favorite.find({ user: userId }).populate({
     path: 'ad',
     populate: { path: 'user', select: 'name' },
   });
 
-  // return list of ad objects (or return favorite docs)
-  const ads = favs.map(f => f.ad);
+  const ads = favs
+    .filter(f => f.ad !== null) // <-- remove broken references
+    .map(f => f.ad);
 
   res.status(200).json({
     status: 'success',

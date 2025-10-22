@@ -68,18 +68,21 @@ userSchema.pre('save', function (next) {
 userSchema.pre('findOneAndDelete', async function (next) {
   const userId = this.getQuery()['_id'];
 
-  // Delete related data
-  await Promise.all([
-    Ad.deleteMany({ user: userId }),
-    Chat.deleteMany({ user: userId }),
-    Favorite.deleteMany({ user: userId }),
-    Message.deleteMany({ user: userId }),
-    Message.deleteMany({ user: userId }),
-  ]);
+  try {
+    await Promise.all([
+      Ad.deleteMany({ user: userId }),
+      Chat.deleteMany({ participants: userId }),
+      Message.deleteMany({
+        $or: [{ sender: userId }, { recipient: userId }],
+      }),
+      Favorite.deleteMany({ user: userId }),
+    ]);
 
-  next();
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
-
 userSchema.methods.correctPassword = async function (
   candidatePassword,
   userPassword,

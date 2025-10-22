@@ -191,6 +191,7 @@ exports.getMyAds = catchAsync(async (req, res, next) => {
     model: a.model,
     city: a.city,
     town: a.town,
+    condition: a.condition,
     isFeatured: !!a.isFeatured,
     isActive: a.isActive,
     expiresAt: a.expiresAt,
@@ -217,12 +218,25 @@ exports.getAdsByUser = catchAsync(async (req, res, next) => {
     user: userId,
     isActive: true,
     expiresAt: { $gt: now },
-  }).sort('-createdAt');
+  })
+    .populate('user', 'name photo')
+    .sort('-createdAt');
+
+  const transformedAds = ads.map(ad => {
+    const adObj = ad.toObject();
+    return {
+      ...adObj,
+      thumbnail:
+        Array.isArray(adObj.images) && adObj.images.length
+          ? adObj.images[0]
+          : null,
+    };
+  });
 
   res.status(200).json({
     status: 'success',
-    results: ads.length,
-    data: ads,
+    results: transformedAds.length,
+    data: transformedAds,
   });
 });
 
@@ -303,7 +317,6 @@ exports.deleteAd = catchAsync(async (req, res, next) => {
     return next(new AppError('No ad found with that ID', 404));
   }
 
-  // Check ownership
   if (ad.user.toString() !== req.user.id) {
     return next(
       new AppError('You do not have permission to delete this ad', 403),
@@ -312,12 +325,14 @@ exports.deleteAd = catchAsync(async (req, res, next) => {
 
   await Ad.findByIdAndDelete(req.params.id);
 
+  // Delete all favorites pointing to this ad
+  await Favorite.deleteMany({ ad: req.params.id });
+
   res.status(204).json({
     status: 'success',
     data: null,
   });
 });
-
 exports.toggleAdStatus = catchAsync(async (req, res, next) => {
   const ad = await Ad.findById(req.params.id);
 
