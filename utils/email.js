@@ -49,7 +49,7 @@ const getEmailVerificationHTML = (name, verificationURL) => {
     <html>
       <body style="font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4;">
         <div style="max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-          <h1 style="color: #333; text-align: center; margin-bottom: 30px;">Welcome to Your App!</h1>
+          <h1 style="color: #333; text-align: center; margin-bottom: 30px;">Welcome to SellPhone!</h1>
           <p style="color: #666; line-height: 1.6; font-size: 16px;">Hi ${firstName},</p>
           <p style="color: #666; line-height: 1.6; font-size: 16px;">Thank you for signing up! To complete your account creation, please verify your email address by clicking the button below:</p>
           <div style="text-align: center; margin: 40px 0;">
@@ -60,7 +60,7 @@ const getEmailVerificationHTML = (name, verificationURL) => {
           <p style="color: #666; line-height: 1.6; font-size: 14px; margin-top: 30px;">This verification link will expire in 24 hours.</p>
           <p style="color: #666; line-height: 1.6; font-size: 14px;">If you didn't create an account, please ignore this email.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          <p style="color: #999; font-size: 12px; text-align: center;">© 2024 Your App. All rights reserved.</p>
+          <p style="color: #999; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} SellPhone. All rights reserved.</p>
         </div>
       </body>
     </html>
@@ -84,7 +84,7 @@ const getPasswordResetHTML = (name, resetURL) => {
           <p style="color: #666; line-height: 1.6; font-size: 14px; margin-top: 30px;"><strong>This reset link will expire in 10 minutes.</strong></p>
           <p style="color: #666; line-height: 1.6; font-size: 14px;">If you didn't request this password reset, please ignore this email.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          <p style="color: #999; font-size: 12px; text-align: center;">© 2024 Your App. All rights reserved.</p>
+          <p style="color: #999; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} SellPhone. All rights reserved.</p>
         </div>
       </body>
     </html>
@@ -109,7 +109,7 @@ const getEmailChangeHTML = (name, newEmail, verificationURL) => {
           <p style="color: #666; line-height: 1.6; font-size: 14px; margin-top: 30px;"><strong>This verification link will expire in 24 hours.</strong></p>
           <p style="color: #666; line-height: 1.6; font-size: 14px;">If you didn't request this email change, please ignore this email or contact support.</p>
           <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-          <p style="color: #999; font-size: 12px; text-align: center;">© 2024 Your App. All rights reserved.</p>
+          <p style="color: #999; font-size: 12px; text-align: center;">© ${new Date().getFullYear()} SellPhone. All rights reserved.</p>
         </div>
       </body>
     </html>

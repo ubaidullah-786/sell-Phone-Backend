@@ -1,3 +1,5 @@
+// UPDATED socket-server.js with automatic message delivery on user online
+
 const socketIo = require('socket.io');
 const Message = require('./models/messageModel');
 const Chat = require('./models/chatModel');
@@ -5,6 +7,7 @@ const {
   addSocketForUser,
   removeSocketForUser,
   getSocketIds,
+  isUserOnline,
 } = require('./utils/presence');
 
 let ioInstance = null;
@@ -16,10 +19,50 @@ function initSocket(server) {
     console.log('socket connected', socket.id);
 
     // client MUST emit 'presence:online' after authentication with their userId
-    socket.on('presence:online', userId => {
+    socket.on('presence:online', async userId => {
       if (!userId) return;
       addSocketForUser(userId, socket.id);
-      // optionally emit presence change: ioInstance.emit('presence:update', { userId, online:true })
+
+      // NEW: Mark all pending messages for this user as delivered
+      try {
+        // Find all messages where this user is recipient and status is 'sent'
+        const pendingMessages = await Message.find({
+          recipient: userId,
+          status: 'sent',
+        }).select('_id sender chat');
+
+        if (pendingMessages.length > 0) {
+          // Update all to delivered
+          await Message.updateMany(
+            { recipient: userId, status: 'sent' },
+            { $set: { status: 'delivered', updatedAt: new Date() } },
+          );
+
+          // Notify each sender about delivery
+          pendingMessages.forEach(msg => {
+            const senderId = msg.sender.toString();
+            const senderSocketIds = getSocketIds(senderId);
+            senderSocketIds.forEach(sid => {
+              ioInstance.to(sid).emit('message:status', {
+                messageId: msg._id,
+                status: 'delivered',
+              });
+            });
+          });
+
+          console.log(
+            `Marked ${pendingMessages.length} messages as delivered for user ${userId}`,
+          );
+        }
+      } catch (err) {
+        console.error(
+          'Error marking messages as delivered on user online:',
+          err,
+        );
+      }
+
+      // Broadcast to all connected clients that this user is online
+      ioInstance.emit('presence:userOnline', { userId });
     });
 
     // client notifies server that it's reading a chat -> mark messages as read
@@ -100,16 +143,25 @@ function initSocket(server) {
 
     socket.on('disconnect', () => {
       // remove this socket from any user mappings
-      // We must find which user had this socketId
-      // Approach: iterate presence map (acceptable for single server). For large scale use reverse map or Redis.
-      // We'll remove any entry that matched socket.id
       const { onlineUsers } = require('./utils/presence');
+      let disconnectedUserId = null;
+
       for (const [userId, set] of onlineUsers.entries()) {
         if (set.has(socket.id)) {
           removeSocketForUser(userId, socket.id);
+          // Check if user is now completely offline (no other sockets)
+          if (!onlineUsers.has(userId)) {
+            disconnectedUserId = userId;
+          }
           break;
         }
       }
+
+      // If user went fully offline, broadcast it
+      if (disconnectedUserId) {
+        ioInstance.emit('presence:userOffline', { userId: disconnectedUserId });
+      }
+
       console.log('socket disconnected', socket.id);
     });
   });

@@ -95,7 +95,7 @@ exports.signup = catchAsync(async (req, res, next) => {
 
     await sendEmail(
       email,
-      'Verify Your Email Address - Your App',
+      'Verify Your Email Address - Sell Phone',
       htmlContent,
       textContent,
     );

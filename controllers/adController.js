@@ -333,6 +333,7 @@ exports.deleteAd = catchAsync(async (req, res, next) => {
     data: null,
   });
 });
+
 exports.toggleAdStatus = catchAsync(async (req, res, next) => {
   const ad = await Ad.findById(req.params.id);
 
