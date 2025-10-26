@@ -323,6 +323,27 @@ exports.deleteAd = catchAsync(async (req, res, next) => {
     );
   }
 
+  // Delete ad images from disk before removing the document
+  if (ad.images && ad.images.length > 0) {
+    ad.images.forEach(img => {
+      const imgPath = path.join(
+        __dirname,
+        '..',
+        'public',
+        'uploads',
+        'ads',
+        img,
+      );
+      if (fs.existsSync(imgPath)) {
+        try {
+          fs.unlinkSync(imgPath);
+        } catch (e) {
+          console.error(`Failed to delete ad image ${img}:`, e?.message || e);
+        }
+      }
+    });
+  }
+
   await Ad.findByIdAndDelete(req.params.id);
 
   // Delete all favorites pointing to this ad

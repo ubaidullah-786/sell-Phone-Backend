@@ -100,5 +100,44 @@ adSchema.methods.ensureActiveStatus = async function () {
   return this;
 };
 
+// Ensure images are removed from disk whenever an ad is deleted via findByIdAndDelete/findOneAndDelete
+adSchema.pre('findOneAndDelete', async function (next) {
+  try {
+    const path = require('path');
+    const fs = require('fs');
+    const doc = await this.model
+      .findOne(this.getQuery())
+      .select('images')
+      .lean();
+
+    if (doc && Array.isArray(doc.images)) {
+      doc.images.forEach(img => {
+        const imgPath = path.join(
+          __dirname,
+          '..',
+          'public',
+          'uploads',
+          'ads',
+          img,
+        );
+        if (fs.existsSync(imgPath)) {
+          try {
+            fs.unlinkSync(imgPath);
+          } catch (e) {
+            console.error(
+              'Failed to delete ad image in hook:',
+              img,
+              e?.message || e,
+            );
+          }
+        }
+      });
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
+
 const Ad = mongoose.model('Ad', adSchema);
 module.exports = Ad;

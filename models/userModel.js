@@ -66,9 +66,51 @@ userSchema.pre('save', function (next) {
 });
 
 userSchema.pre('findOneAndDelete', async function (next) {
+  const path = require('path');
+  const fs = require('fs');
   const userId = this.getQuery()['_id'];
 
   try {
+    // 1) Delete user's photo from disk, if any
+    const user = await this.model.findById(userId).select('photo').lean();
+    if (user && user.photo) {
+      // user.photo may start with '/uploads/users/...'; normalize to relative path under public
+      const relPhoto = user.photo.replace(/^[/\\]+/, '');
+      const photoPath = path.join(__dirname, '..', 'public', relPhoto);
+      if (fs.existsSync(photoPath)) {
+        try {
+          fs.unlinkSync(photoPath);
+        } catch (e) {
+          console.error('Failed to delete user photo:', e?.message || e);
+        }
+      }
+    }
+
+    // 2) Delete all images for ads owned by this user from disk
+    const userAds = await Ad.find({ user: userId }).select('images').lean();
+    userAds.forEach(ad => {
+      if (Array.isArray(ad.images)) {
+        ad.images.forEach(img => {
+          const imgPath = path.join(
+            __dirname,
+            '..',
+            'public',
+            'uploads',
+            'ads',
+            img,
+          );
+          if (fs.existsSync(imgPath)) {
+            try {
+              fs.unlinkSync(imgPath);
+            } catch (e) {
+              console.error('Failed to delete ad image:', img, e?.message || e);
+            }
+          }
+        });
+      }
+    });
+
+    // 3) Delete related documents from the database
     await Promise.all([
       Ad.deleteMany({ user: userId }),
       Chat.deleteMany({ participants: userId }),
