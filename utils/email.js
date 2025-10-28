@@ -1,4 +1,9 @@
 const nodemailer = require('nodemailer');
+const https = require('https');
+const { URL } = require('url');
+
+// Helper to normalize base URL and avoid double slashes
+const normalizeBaseUrl = url => (url ? url.replace(/\/$/, '') : url);
 
 const createTransporter = () => {
   if (process.env.NODE_ENV === 'production') {
@@ -23,8 +28,86 @@ const createTransporter = () => {
 
 const sendEmail = async (to, subject, htmlContent, textContent) => {
   try {
-    const transporter = createTransporter();
+    // In production, optionally delegate email sending to the frontend API (e.g., on Vercel)
+    if (
+      process.env.NODE_ENV === 'production' &&
+      process.env.FRONTEND_EMAIL_API_URL &&
+      process.env.EMAIL_SECRET
+    ) {
+      const baseUrl = normalizeBaseUrl(process.env.FRONTEND_EMAIL_API_URL);
+      const endpoint = `${baseUrl}/api/email/send`;
+      const payload = JSON.stringify({
+        to,
+        subject,
+        html: htmlContent,
+        text: textContent,
+        from: process.env.EMAIL_FROM,
+      });
 
+      // Prefer global fetch if available (Node 18+)
+      if (typeof fetch === 'function') {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.EMAIL_SECRET}`,
+          },
+          body: payload,
+        });
+        if (!res.ok) {
+          const msg = await res.text();
+          throw new Error(
+            `Frontend email API error (${res.status}): ${msg?.slice(0, 500)}`,
+          );
+        }
+        const data = await res.json().catch(() => ({}));
+        console.log('Email sent via frontend API to:', to);
+        return data;
+      }
+
+      // Fallback for older Node without fetch: use https.request
+      const url = new URL(endpoint);
+      const options = {
+        method: 'POST',
+        hostname: url.hostname,
+        port: url.port || 443,
+        path: url.pathname + (url.search || ''),
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payload),
+          Authorization: `Bearer ${process.env.EMAIL_SECRET}`,
+        },
+      };
+
+      const responseText = await new Promise((resolve, reject) => {
+        const req = https.request(options, res => {
+          let data = '';
+          res.on('data', chunk => (data += chunk));
+          res.on('end', () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) resolve(data);
+            else
+              reject(
+                new Error(
+                  `Frontend email API error (${res.statusCode}): ${data.slice(0, 500)}`,
+                ),
+              );
+          });
+        });
+        req.on('error', reject);
+        req.write(payload);
+        req.end();
+      });
+
+      console.log('Email sent via frontend API to:', to);
+      try {
+        return JSON.parse(responseText);
+      } catch (_) {
+        return { status: 'ok' };
+      }
+    }
+
+    // Default path: send directly using SMTP transporter (dev or when API delegation isn't configured)
+    const transporter = createTransporter();
     const mailOptions = {
       from: process.env.EMAIL_FROM,
       to: to,
