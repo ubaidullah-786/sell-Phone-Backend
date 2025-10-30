@@ -14,7 +14,7 @@ const adSchema = new mongoose.Schema(
       required: [true, 'Please provide a description'],
       trim: true,
       maxlength: 1000,
-      minlength: 50,
+      minlength: 20,
     },
     images: {
       type: [String],
