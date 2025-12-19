@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const { seedData } = require('./utils/seedData');
+const { createAdminUser } = require('./utils/createAdmin');
 
 dotenv.config({ path: './config.env' });
 
@@ -17,6 +18,10 @@ const db = process.env.DATABASE.replace(
   try {
     await mongoose.connect(db);
     console.log('Database connection successful...');
+
+    // Create admin user if not exists
+    await createAdminUser();
+
     // await seedData();
 
     const port = process.env.PORT || 5000;

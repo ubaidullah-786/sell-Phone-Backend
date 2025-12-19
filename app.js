@@ -8,6 +8,7 @@ const phoneRouter = require('./routes/phoneRoutes');
 const locationRouter = require('./routes/locationRoutes');
 const favoriteRouter = require('./routes/favoriteRoutes');
 const chatRouter = require('./routes/chatRoutes');
+const adminRouter = require('./routes/adminRoutes');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const rateLimit = require('express-rate-limit');
@@ -74,6 +75,7 @@ app.use('/api/v1/phones', phoneRouter);
 app.use('/api/v1/locations', locationRouter);
 app.use('/api/v1/favorites', favoriteRouter);
 app.use('/api/v1/chats', chatRouter);
+app.use('/api/v1/admin', adminRouter);
 
 app.use((req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));

@@ -36,6 +36,7 @@ const createSendToken = (user, statusCode, res, message = null) => {
     id: user.id,
     name: user.name,
     email: user.email,
+    role: user.role,
   };
 
   if (user.photo) userData.photo = user.photo;
