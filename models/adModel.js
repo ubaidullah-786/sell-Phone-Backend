@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 const adSchema = new mongoose.Schema(
   {
@@ -9,12 +10,31 @@ const adSchema = new mongoose.Schema(
       maxlength: 50,
       minlength: 10,
     },
+    slug: {
+      type: String,
+      lowercase: true,
+    },
     description: {
       type: String,
       required: [true, 'Please provide a description'],
       trim: true,
       maxlength: 1000,
       minlength: 20,
+    },
+    // SEO fields - AI enhanced
+    metaTitle: {
+      type: String,
+      trim: true,
+      maxlength: 70,
+    },
+    metaDescription: {
+      type: String,
+      trim: true,
+      maxlength: 160,
+    },
+    metaKeywords: {
+      type: [String],
+      default: [],
     },
     images: {
       type: [String],
@@ -89,6 +109,19 @@ adSchema.pre('save', function (next) {
   if (this.isExpired && this.isActive) {
     this.isActive = false;
   }
+  next();
+});
+
+// Generate slug from title (without ID suffix for clean URLs)
+adSchema.pre('save', function (next) {
+  if (!this.isModified('title') && !this.isNew) return next();
+
+  this.slug = slugify(this.title, {
+    lower: true,
+    strict: true,
+    remove: /[*+~.()'\'"!:@]/g,
+  });
+
   next();
 });
 

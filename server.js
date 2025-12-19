@@ -7,7 +7,7 @@ dotenv.config({ path: './config.env' });
 const app = require('./app');
 const { initSocket } = require('./socketServer');
 
-// const localDB = process.env.DATABASE_LOCAL;
+// const db = process.env.DATABASE_LOCAL;
 const db = process.env.DATABASE.replace(
   '<db_password>',
   process.env.DATABASE_PASSWORD,

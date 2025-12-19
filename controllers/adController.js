@@ -4,6 +4,7 @@ const User = require('../models/userModel.js');
 const catchAsync = require('../utils/catchAsync.js');
 const AppError = require('../utils/appError.js');
 const Favorite = require('../models/favoriteModel');
+const { generateSeoMetadata } = require('../utils/aiSeoService.js');
 const path = require('path');
 const fs = require('fs');
 
@@ -16,8 +17,19 @@ exports.createAd = catchAsync(async (req, res, next) => {
 
   const images = req.files.map(file => file.filename);
 
+  // Generate AI-enhanced SEO metadata (non-blocking)
+  const adData = { ...req.body, images };
+  let seoMetadata = {};
+
+  try {
+    seoMetadata = await generateSeoMetadata(adData);
+  } catch (err) {
+    console.error('SEO generation failed, using defaults:', err.message);
+  }
+
   const ad = await Ad.create({
     ...req.body,
+    ...seoMetadata,
     images,
     user: req.user.id,
   });
@@ -68,7 +80,7 @@ exports.getAds = catchAsync(async (req, res, next) => {
 
   const ads = await Ad.find(queryObj)
     .select(
-      'title price condition model city town images isFeatured createdAt user',
+      'title price condition model city town images isFeatured createdAt user slug',
     )
     .populate('user', 'name')
     .sort({ isFeatured: -1, createdAt: -1 })
@@ -78,6 +90,7 @@ exports.getAds = catchAsync(async (req, res, next) => {
 
   const transformed = ads.map(a => ({
     _id: a._id,
+    slug: a.slug,
     title: a.title,
     price: a.price,
     model: a.model,
@@ -99,14 +112,23 @@ exports.getAds = catchAsync(async (req, res, next) => {
 });
 
 exports.getAd = catchAsync(async (req, res, next) => {
-  const adId = req.params.id;
+  const idOrSlug = req.params.id;
+  let ad;
 
-  if (!mongoose.Types.ObjectId.isValid(adId)) {
-    return next(new AppError('Invalid ad id', 400));
+  // Check if it's a valid MongoDB ObjectId (24 hex characters)
+  if (
+    mongoose.Types.ObjectId.isValid(idOrSlug) &&
+    /^[0-9a-fA-F]{24}$/.test(idOrSlug)
+  ) {
+    // Fetch by ID
+    ad = await Ad.findById(idOrSlug).populate('user', 'name email');
+  } else {
+    // Treat as slug - find by slug
+    ad = await Ad.findOne({ slug: idOrSlug.toLowerCase() }).populate(
+      'user',
+      'name email',
+    );
   }
-
-  // fetch full ad with owner info (we populate name and email)
-  const ad = await Ad.findById(adId).populate('user', 'name email');
 
   if (!ad) return next(new AppError('No ad found with that ID', 404));
 

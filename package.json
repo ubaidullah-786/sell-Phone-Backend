@@ -1,7 +1,7 @@
 {
-  "name": "natours",
+  "name": "sellphone",
   "version": "1.0.0",
-  "description": "Learn node, express, and mongoDB",
+  "description": "Buy and Sell Phones Online - Best Deals on Mobile Phones",
   "main": "app.js",
   "scripts": {
     "start": "nodemon server.js",
